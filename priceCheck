@@ -1,4 +1,4 @@
-(function() {
+javascript:(function() {
     let popup = document.createElement("div");
     popup.style.position = "fixed";
     popup.style.top = "5px";
