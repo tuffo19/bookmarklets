@@ -1,0 +1,224 @@
+(function() {
+    let popup = document.createElement("div");
+    popup.style.position = "fixed";
+    popup.style.top = "5px";
+    popup.style.right = "5px";
+    popup.style.width = "200px";
+    popup.style.padding = "8px";
+    popup.style.background = "#f8f9fa";
+    popup.style.border = "1px solid #ccc";
+    popup.style.borderRadius = "8px";
+    popup.style.boxShadow = "0px 4px 10px rgba(0, 0, 0, 0.1)";
+    popup.style.zIndex = "10000";
+    popup.style.cursor = "move";
+    popup.style.fontFamily = "Arial, sans-serif";
+    popup.style.fontSize = "12px";
+
+    let header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+    header.style.marginBottom = "8px";
+    
+    let title = document.createElement("div");
+    title.innerText = "Calcolatore";
+    title.style.fontWeight = "bold";
+    title.style.textAlign = "center";
+    
+    let closeX = document.createElement("button");
+    closeX.innerText = "×";
+    closeX.style.border = "none";
+    closeX.style.background = "transparent";
+    closeX.style.fontSize = "14px";
+    closeX.style.cursor = "pointer";
+    closeX.onclick = function() { document.body.removeChild(popup); };
+    
+    header.appendChild(title);
+    header.appendChild(closeX);
+
+    function createPickerButton(inputField,callback) {
+        let button = document.createElement("button");
+        button.style.marginLeft = "5px";
+        button.style.padding = "2px";
+        button.style.border = "none";
+        button.style.background = "transparent";
+        button.style.cursor = "pointer";
+        
+        let icon = document.createElement("img");
+        icon.src = "https://cdn-icons-png.freepik.com/256/6002/6002082.png";
+        icon.style.width = "16px";
+        icon.style.height = "16px";
+        button.appendChild(icon); 
+
+        button.onclick = function() {
+            document.body.style.cursor = "crosshair";
+            document.addEventListener("click", function handler(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                document.body.style.cursor = "default";
+                
+                let rawText = e.target.innerText.trim() || e.target.value || "";
+                console.log("Elemento selezionato: ", e.target);
+                console.log("Testo estratto: ", rawText);
+                
+                let parsedValue = rawText.match(/([\d.,]+)\s*(ml|cc|l|litro|h|etti|kg|chilo|kilo|mg|unità)?/i);
+                
+                if (parsedValue) {
+                    inputField.value = parsedValue[1].replace(",", ".");
+                    console.log("Numero estratto: ", inputField.value);
+                    if (parsedValue[2]) {
+                        quantityField.select.value = parsedValue[2].toLowerCase();
+                        console.log("Unità estratta: ", quantityField.select.value);
+                    }
+                }
+                
+                document.removeEventListener("click", handler, true);
+                callback();
+            }, true);
+        };
+        return button;
+    }
+
+    function createQuantityField(callback) {
+        let wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.marginBottom = "5px";
+
+        let input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = "Quantità";
+        input.style.flex = "0.45";
+        input.style.padding = "4px";
+        input.style.border = "1px solid #ccc";
+        input.style.borderRadius = "4px";
+        input.style.fontSize = "12px";
+        input.style.width = "45%";
+
+        let select = document.createElement("select");
+        select.style.flex = "0.45";
+        select.style.marginLeft = "5px";
+        select.style.padding = "4px";
+        select.style.border = "1px solid #ccc";
+        select.style.borderRadius = "4px";
+        select.style.fontSize = "12px";
+        select.style.width = "45%";
+
+        ["ml", "cc", "l", "litro", "h", "etti", "kg", "chilo", "kilo", "mg", "unità"].forEach(unit => {
+            let option = document.createElement("option");
+            option.value = unit;
+            option.textContent = unit;
+            select.appendChild(option);
+        });
+
+        let pickerButton = createPickerButton(input,updateResult);
+        pickerButton.style.flex = "0.1";
+
+        input.addEventListener("input", callback);
+        select.addEventListener("change", callback);
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(select);
+        wrapper.appendChild(pickerButton);
+        return { wrapper, input, select };
+    }
+
+    function createInputWithPicker(placeholder, callback) {
+        let wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.marginBottom = "5px";
+        
+        let input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = placeholder;
+        input.style.flex = "1";
+        input.style.padding = "4px";
+        input.style.border = "1px solid #ccc";
+        input.style.borderRadius = "4px";
+        input.style.fontSize = "12px";
+
+        let pickerButton = createPickerButton(input,updateResult);
+        
+        wrapper.appendChild(input);
+        wrapper.appendChild(pickerButton);
+        return { wrapper, input };
+    }
+
+    let priceField = createInputWithPicker("Prezzo", updateResult);
+    let quantityField = createQuantityField(updateResult);
+    
+    let result = document.createElement("div");
+    result.style.marginTop = "8px";
+    result.style.textAlign = "center";
+    result.style.fontWeight = "bold";
+    result.innerText = "Risultato: ";
+    
+    function updateResult() {
+        let price = parseFloat(priceField.input.value) || 0;
+        let quantity = parseFloat(quantityField.input.value) || 0;
+        let unit = quantityField.select.value;
+
+        let conversion = {
+            "ml": 1000, "cc": 100, "l": 1, "litro": 1,
+            "h": 100, "etti": 100, "kg": 1, "chilo": 1, "kilo": 1, "mg": 1000,
+            "unità": 1
+        };
+
+        if (price > 0 && quantity > 0){
+            let convertedQuantity = quantity / (conversion[unit] || 1);
+            let unitLabel;
+            switch (unit) {
+                case "ml":
+                case "cc":
+                case "l":
+                case "litro":
+                unitLabel = "€/litro";
+                break;
+                case "h":
+                case "etti":
+                case "kg":
+                case "chilo":
+                case "kilo":
+                case "mg":
+                unitLabel = "€/Kg";
+                break;
+                case "unità":
+                unitLabel = "€/unità";
+                break;
+                default:
+                unitLabel = "€/unit";
+            }
+            result.innerText = `Risultato: ${(price / convertedQuantity).toFixed(2)} ${unitLabel}`;
+        }
+    }
+
+    priceField.input.addEventListener("input", updateResult);
+    quantityField.input.addEventListener("input", updateResult);
+    quantityField.select.addEventListener("change", updateResult);
+    
+    popup.appendChild(header);
+    popup.appendChild(priceField.wrapper);
+    popup.appendChild(quantityField.wrapper);
+    popup.appendChild(result);
+    document.body.appendChild(popup);
+    
+    let offsetX, offsetY, isDragging = false;
+    
+    popup.addEventListener("mousedown", function(e) {
+        isDragging = true;
+        offsetX = e.clientX - popup.offsetLeft;
+        offsetY = e.clientY - popup.offsetTop;
+    });
+    
+    document.addEventListener("mousemove", function(e) {
+        if (isDragging) {
+            popup.style.left = (e.clientX - offsetX) + "px";
+            popup.style.top = (e.clientY - offsetY) + "px";
+        }
+    });
+    
+    document.addEventListener("mouseup", function() {
+        isDragging = false;
+    });
+})();
