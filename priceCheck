@@ -104,7 +104,7 @@ javascript:(function() {
         select.style.fontSize = "12px";
         select.style.width = "45%";
 
-        ["ml", "cc", "l", "litro", "h", "etti", "kg", "chilo", "kilo", "mg", "unità"].forEach(unit => {
+        [ "unità", "kg", "chilo", "kilo", "ml", "cc", "l", "litro", "h", "etti", "mg"].forEach(unit => {
             let option = document.createElement("option");
             option.value = unit;
             option.textContent = unit;
